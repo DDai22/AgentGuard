@@ -1,0 +1,4 @@
+AgentGuard live monitoring demo.
+Created by the current Codex session.
+Updated to verify the file-operation color channel.
+Final interaction check: file details should open from the orange row.

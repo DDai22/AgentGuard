@@ -1,0 +1,24 @@
+[project]
+name = "agentguard"
+version = "0.1.0"
+description = "Local, observation-only monitor for coding agents"
+requires-python = ">=3.10"
+dependencies = [
+    "psutil>=5.9",
+    "pywebview>=5.4,<6",
+    "pywintrace==0.2.0; platform_system == 'Windows'",
+    "pywin32>=306; platform_system == 'Windows'",
+]
+
+[project.scripts]
+agentguard = "agentguard.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["agentguard*"]
+
+[tool.setuptools.package-data]
+agentguard = ["assets/*.html"]

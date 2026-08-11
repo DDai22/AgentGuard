@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #090d14; --surface: #111720; --surface2: #151d29;
+      --border: rgba(255,255,255,.075); --text: #f5f7fb; --muted: #8792a5;
+      --tool: #8c8cff; --network: #38c7e8; --file: #f29a5b; --system: #d77cff; --local: #8491a6;
+      --safe: #55d992; --review: #f4bd62; --danger: #ff7272;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+    body { font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif; color: var(--text); background: #090d14; -webkit-font-smoothing: antialiased; }
+    button { font: inherit; }
+    .app { width: 100%; min-height: 100%; background: linear-gradient(155deg,#121823,#080c13); border: 1px solid rgba(255,255,255,.11); border-radius: 15px; overflow: hidden; box-shadow: 0 18px 55px rgba(0,0,0,.46); }
+    .titlebar { height: 52px; display: flex; align-items: center; padding: 0 10px 0 16px; border-bottom: 1px solid var(--border); }
+    .pywebview-drag-region { cursor: default; }
+    .brand { display: flex; align-items: center; gap: 9px; flex: 1; min-width: 0; }
+    .mark { width: 25px; height: 25px; display: grid; place-items: center; border-radius: 8px; color: white; background: linear-gradient(145deg,#8c99ff,#596cff); box-shadow: 0 5px 18px rgba(98,115,255,.28); }
+    .mark svg { width: 14px; height: 14px; }
+    .name { font-size: 13px; font-weight: 650; }
+    .live { display: inline-flex; align-items: center; gap: 5px; margin-left: 3px; color: #a9b1bf; font-size: 10px; font-weight: 600; }
+    .live i { width: 5px; height: 5px; border-radius: 50%; background: #596273; }
+    .live.active i { background: var(--safe); box-shadow: 0 0 0 4px rgba(85,217,146,.09); }
+    .conversation-id { max-width: 125px; margin-left: 6px; padding: 2px 5px; border-radius: 5px; color: #8e9bad; background: rgba(255,255,255,.045); font-size: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .minimal-status { display: none; align-items: center; margin-left: 7px; padding: 3px 7px; border-radius: 7px; color: var(--safe); background: rgba(85,217,146,.08); border: 1px solid rgba(85,217,146,.15); font-size: 9px; font-weight: 700; white-space: nowrap; }
+    .minimal-status.has-risk { color: var(--review); background: rgba(244,189,98,.09); border-color: rgba(244,189,98,.17); }
+    .controls { display: flex; gap: 2px; }
+    .icon-btn { width: 30px; height: 30px; border: 0; border-radius: 8px; color: #8993a5; background: transparent; cursor: pointer; display: grid; place-items: center; }
+    .icon-btn svg { width: 14px; height: 14px; }
+    .icon-btn:hover { color: white; background: rgba(255,255,255,.07); }
+    .icon-btn.close:hover { color: #ff8b8b; background: rgba(255,92,92,.1); }
+
+    .main { padding: 14px; }
+    .posture { width: 100%; min-height: 78px; display: flex; align-items: center; gap: 12px; padding: 14px; color: inherit; text-align: left; border: 1px solid var(--border); border-radius: 13px; background: linear-gradient(145deg,rgba(255,255,255,.035),rgba(255,255,255,.016)); cursor: pointer; transition: .16s ease; }
+    .posture:hover { transform: translateY(-1px); border-color: rgba(255,255,255,.14); background: linear-gradient(145deg,rgba(255,255,255,.052),rgba(255,255,255,.022)); }
+    .posture-icon { width: 42px; height: 42px; flex: 0 0 42px; border-radius: 13px; display: grid; place-items: center; color: var(--safe); background: rgba(85,217,146,.09); border: 1px solid rgba(85,217,146,.14); }
+    .posture.review .posture-icon { color: var(--review); background: rgba(244,189,98,.09); border-color: rgba(244,189,98,.16); }
+    .posture.danger .posture-icon { color: var(--danger); background: rgba(255,114,114,.09); border-color: rgba(255,114,114,.16); }
+    .posture-icon svg { width: 20px; height: 20px; }
+    .posture-copy { min-width: 0; flex: 1; }
+    .posture-title { font-size: 13px; line-height: 1.35; font-weight: 650; }
+    .posture-subtitle { margin-top: 4px; color: var(--muted); font-size: 10.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .posture-side { display: flex; align-items: center; gap: 7px; }
+    .score { min-width: 34px; height: 24px; padding: 0 8px; border-radius: 8px; display: none; place-items: center; font-size: 10px; font-weight: 700; color: var(--review); background: rgba(244,189,98,.09); border: 1px solid rgba(244,189,98,.14); }
+    .posture.review .score,.posture.danger .score { display: grid; }
+    .posture.danger .score { color: var(--danger); background: rgba(255,114,114,.08); border-color: rgba(255,114,114,.14); }
+    .posture-arrow { color: #6e798c; font-size: 15px; }
+
+    .summary { min-height: 49px; display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 5px; padding: 6px 10px 6px 12px; border-top: 1px solid var(--border); }
+    .stats { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); align-items: center; gap: 3px; min-width: 0; width: 100%; }
+    .stat { display: inline-flex; align-items: center; gap: 4px; color: #818c9f; font-size: 9.5px; white-space: nowrap; }
+    button.stat { min-width: 0; justify-content: center; overflow: hidden; border: 1px solid transparent; border-radius: 7px; padding: 4px 2px; background: transparent; cursor: pointer; }
+    button.stat:hover { color: #e9eef7; border-color: rgba(255,255,255,.11); background: rgba(255,255,255,.055); }
+    button.stat.active { color: #f4f7fb; border-color: rgba(255,255,255,.18); background: rgba(255,255,255,.075); box-shadow: inset 0 0 0 1px rgba(255,255,255,.025); }
+    .stat i { width: 6px; height: 6px; border-radius: 2px; background: var(--local); }
+    .stat b { color: #d8dde7; font-size: 10px; font-weight: 700; }
+    .stat.tool i { background: var(--tool); } .stat.tool b { color: var(--tool); }
+    .stat.network i { background: var(--network); } .stat.network b { color: var(--network); }
+    .stat.file i { background: var(--file); } .stat.file b { color: var(--file); }
+    .stat.system i { background: var(--system); } .stat.system b { color: var(--system); }
+    .stat.risk i { border-radius: 50%; background: var(--review); } .stat.risk b { color: var(--review); }
+    .stat.risk.danger i { background: var(--danger); } .stat.risk.danger b { color: var(--danger); }
+    .safe-entry { border: 1px solid rgba(85,217,146,.12); border-radius: 7px; padding: 4px 6px; color: #8ca99a; background: rgba(85,217,146,.045); cursor: pointer; }
+    .safe-entry i { border-radius: 50%; background: var(--safe); }
+    .safe-entry b { color: var(--safe); }
+    .safe-entry:hover { color: #dff8eb; border-color: rgba(85,217,146,.23); background: rgba(85,217,146,.085); }
+    .expand { border: 0; padding: 7px 7px; border-radius: 8px; cursor: pointer; color: #99a3b5; background: transparent; display: flex; align-items: center; gap: 4px; font-size: 10px; }
+    .expand:hover { color: white; background: rgba(255,255,255,.05); }
+    .chevron { width: 12px; height: 12px; transition: transform .2s ease; }
+    body.expanded .chevron { transform: rotate(180deg); }
+
+    .minimal-toggle { color: #aeb8c8; }
+    .minimal-toggle svg { transition: transform .18s ease; }
+    body.minimal .app { min-height: 0; }
+    body.minimal .main, body.minimal .summary, body.minimal .details { display: none; }
+    body.minimal .titlebar { border-bottom: 0; }
+    body.minimal .name, body.minimal .conversation-id, body.minimal .workspace-btn, body.minimal .window-minimize { display: none; }
+    body.minimal .minimal-status { display: inline-flex; }
+    body.minimal .minimal-toggle svg { transform: rotate(180deg); }
+
+    @media (max-width: 330px) {
+      .titlebar { padding-left: 10px; }
+      .stats { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .stat { font-size: 8.5px; }
+      .expand { padding-left: 3px; padding-right: 3px; }
+    }
+
+    .details { display: none; height: 324px; padding: 0 14px 14px; overflow-y: auto; }
+    body.expanded .details { display: block; }
+    body.detail-mode .main, body.detail-mode .summary { display: none; }
+    body.detail-mode .details { display: block; height: calc(100vh - 52px); padding: 12px 14px 16px; }
+    body.detail-mode .list-view { display: none; }
+    .detail-view { display: none; }
+    body.detail-mode .detail-view { display: block; }
+    .details::-webkit-scrollbar { width: 5px; } .details::-webkit-scrollbar-thumb { background: rgba(255,255,255,.11); border-radius: 5px; }
+    .detail-card.focused { animation: detail-focus .7s ease-out; }
+    @keyframes detail-focus { 0% { box-shadow: 0 0 0 2px rgba(244,189,98,.72), 0 0 28px rgba(244,189,98,.18); } 100% { box-shadow: none; } }
+    .section-head { display: flex; align-items: center; justify-content: space-between; margin: 4px 2px 9px; }
+    .section-title { font-size: 10px; text-transform: uppercase; letter-spacing: .65px; color: #778397; font-weight: 700; }
+    .section-count { color: #697488; font-size: 9px; }
+    .detail-nav { position: sticky; top: -12px; z-index: 3; display: flex; align-items: center; gap: 9px; margin: 0 -2px 10px; padding: 10px 2px 8px; background: linear-gradient(#0b1018 75%,rgba(11,16,24,0)); }
+    .back-button { border: 1px solid rgba(255,255,255,.09); border-radius: 8px; padding: 5px 8px; color: #aab4c4; background: rgba(255,255,255,.035); cursor: pointer; font-size: 9.5px; }
+    .back-button:hover { color: white; border-color: rgba(255,255,255,.16); background: rgba(255,255,255,.07); }
+    .detail-nav-title { color: #d8dee9; font-size: 10.5px; font-weight: 650; }
+
+    .attention-tabs { margin-bottom: 9px; }
+    .attention-tabs:empty { display: none; }
+    .file-scope-tabs { display: none; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 5px; margin: 0 0 10px; }
+    .file-scope-tabs.visible { display: grid; }
+    .file-scope-tabs button { min-width: 0; padding: 6px 8px; border: 1px solid rgba(242,154,91,.14); border-radius: 8px; color: #9ca7b8; background: rgba(242,154,91,.035); cursor: pointer; font-size: 9px; text-align: left; }
+    .file-scope-tabs button:hover, .file-scope-tabs button.active { color: #f5c18d; border-color: rgba(242,154,91,.3); background: rgba(242,154,91,.1); }
+    .attention-switcher { display: grid; grid-template-columns: 30px minmax(0,1fr) 30px; align-items: stretch; border: 1px solid rgba(244,189,98,.13); border-radius: 11px; background: linear-gradient(145deg,rgba(244,189,98,.045),rgba(255,255,255,.018)); overflow: hidden; }
+    .attention-nav { border: 0; color: #7f8a9d; background: transparent; cursor: pointer; font-size: 17px; transition: .15s ease; }
+    .attention-nav:hover { color: white; background: rgba(255,255,255,.055); }
+    .attention-current { min-width: 0; padding: 7px 9px; border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
+    .attention-current-top { display: flex; align-items: center; gap: 6px; color: #9ca6b7; font-size: 8px; }
+    .attention-index { color: var(--review); font-weight: 750; font-variant-numeric: tabular-nums; }
+    .attention-current-title { margin-top: 2px; color: #d9dee8; font-size: 9.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .detail-card { padding: 12px; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,.022); }
+    .detail-top { display: flex; align-items: center; gap: 10px; }
+    .category-icon { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; flex: 0 0 34px; font-size: 14px; font-weight: 700; }
+    .cat-tool { color: var(--tool); background: rgba(140,140,255,.10); border: 1px solid rgba(140,140,255,.15); }
+    .cat-network { color: var(--network); background: rgba(56,199,232,.09); border: 1px solid rgba(56,199,232,.15); }
+    .cat-file { color: var(--file); background: rgba(242,154,91,.09); border: 1px solid rgba(242,154,91,.15); }
+    .cat-system { color: var(--system); background: rgba(215,124,255,.09); border: 1px solid rgba(215,124,255,.15); }
+    .cat-local { color: var(--local); background: rgba(132,145,166,.08); border: 1px solid rgba(132,145,166,.14); }
+    .detail-heading { min-width: 0; flex: 1; }
+    .detail-kicker { display: flex; align-items: center; gap: 6px; min-width: 0; }
+    .detail-category { color: var(--muted); font-size: 9px; }
+    .detail-session { max-width: 150px; padding: 2px 5px; border-radius: 5px; color: #9ca8bb; background: rgba(255,255,255,.045); font-size: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .detail-title { margin-top: 2px; font-size: 11px; font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .risk-pill { padding: 5px 7px; border-radius: 7px; font-size: 9px; font-weight: 700; }
+    .risk-safe { color: var(--safe); background: rgba(85,217,146,.08); border: 1px solid rgba(85,217,146,.13); }
+    .risk-review { color: var(--review); background: rgba(244,189,98,.08); border: 1px solid rgba(244,189,98,.14); }
+    .risk-danger { color: var(--danger); background: rgba(255,114,114,.08); border: 1px solid rgba(255,114,114,.14); }
+    .reason-box { margin-top: 10px; padding: 8px 9px; border-left: 2px solid var(--review); border-radius: 0 7px 7px 0; color: #aab3c2; background: rgba(244,189,98,.045); font-size: 9.5px; line-height: 1.45; }
+    .detail-card.high .reason-box { border-color: var(--danger); background: rgba(255,114,114,.04); }
+    .meta-grid { margin-top: 10px; border-top: 1px solid var(--border); }
+    .meta-row { display: grid; grid-template-columns: 68px minmax(0,1fr); gap: 8px; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,.045); font-size: 9.5px; }
+    .meta-label { color: #697589; }
+    .meta-value { color: #b7c0ce; overflow-wrap: anywhere; white-space: pre-line; user-select: text; }
+    .detail-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 9px; }
+    .detail-actions > span:last-child { display: inline-flex; align-items: center; gap: 5px; }
+    .occurrences { color: #687387; font-size: 9px; }
+    .dismiss { border: 0; border-radius: 7px; padding: 5px 8px; color: #8e99aa; background: rgba(255,255,255,.045); cursor: pointer; font-size: 9px; }
+    .dismiss:disabled { color: #657084; cursor: default; opacity: .8; }
+    .dismiss:hover { color: white; background: rgba(255,255,255,.08); }
+    .dismiss:hover:disabled { color: #657084; background: rgba(255,255,255,.045); }
+    .confirm-session { border: 1px solid rgba(56,199,232,.18); border-radius: 7px; padding: 5px 8px; color: #6fd6e9; background: rgba(56,199,232,.06); cursor: pointer; font-size: 9px; }
+    .confirm-session:hover { color: white; background: rgba(56,199,232,.13); }
+    .confirm-session:disabled { color: #657084; border-color: rgba(255,255,255,.07); background: rgba(255,255,255,.035); cursor: default; }
+
+    .recent-wrap { margin-top: 17px; }
+    .list-view .recent-wrap { margin-top: 0; }
+    .reviewed-wrap { margin-top: 18px; padding-top: 13px; border-top: 1px solid rgba(255,255,255,.055); }
+    .recent-list { display: grid; gap: 4px; }
+    .recent-row { width: 100%; display: grid; grid-template-columns: 24px minmax(0,1fr) auto auto 10px; align-items: center; gap: 8px; min-height: 38px; padding: 2px 6px; border: 1px solid transparent; border-radius: 9px; color: #a7b0bf; background: transparent; text-align: left; font-size: 9.5px; cursor: pointer; transition: background .15s ease, border-color .15s ease, transform .15s ease; }
+    .recent-row:hover { color: #eef3fb; background: rgba(255,255,255,.045); border-color: rgba(255,255,255,.075); transform: translateX(2px); }
+    .recent-row:active { transform: translateX(2px) scale(.992); }
+    .recent-row:focus-visible { outline: 1px solid rgba(140,140,255,.8); outline-offset: 1px; }
+    .recent-row .row-arrow { color: #536075; font-size: 14px; transition: color .15s ease, transform .15s ease; }
+    .recent-row:hover .row-arrow { color: #aeb9cb; transform: translateX(2px); }
+    .recent-icon { width: 23px; height: 23px; border-radius: 7px; display: grid; place-items: center; font-size: 10px; font-weight: 700; }
+    .recent-description { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .recent-time { color: #626d80; font-variant-numeric: tabular-nums; }
+    .mini-risk { font-size: 8.5px; font-weight: 650; }
+    .mini-risk.reviewed { color: #8d98aa; }
+    .empty { min-height: 58px; display: flex; align-items: center; justify-content: center; color: #697487; border: 1px dashed var(--border); border-radius: 11px; font-size: 10px; }
+    .footer-note { margin-top: 13px; color: #586376; text-align: center; font-size: 9px; }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="titlebar pywebview-drag-region">
+      <div class="brand"><div class="mark"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3 19 6v5c0 4.6-2.9 8.1-7 10-4.1-1.9-7-5.4-7-10V6l7-3Z" stroke="currentColor" stroke-width="2"/><path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="name">AgentGuard</span><span id="live" class="live"><i></i><span>等待 Agent</span></span><span id="conversation-id" class="conversation-id" title="当前 Codex 对话 ID 未确认"></span><span id="minimal-risk" class="minimal-status">正常</span></div>
+      <div class="controls" onmousedown="event.stopPropagation()"><button class="icon-btn workspace-btn" onclick="chooseWorkspace()" aria-label="选择工作区" title="选择工作区"><svg viewBox="0 0 24 24" fill="none"><path d="M3.5 7.5h6l1.7 2h9.3v8.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2V7.5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M3.5 7.5V6a2 2 0 0 1 2-2h4l1.6 2h7.4a2 2 0 0 1 2 2v1.5" stroke="currentColor" stroke-width="1.7"/></svg></button><button class="icon-btn minimal-toggle" onclick="toggleMinimal()" aria-label="切换最小监控状态" title="切换最小监控状态"><svg viewBox="0 0 20 20" fill="none"><path d="m5 8 5 5 5-5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="icon-btn window-minimize" onclick="window.pywebview.api.minimize()" aria-label="最小化到任务栏">−</button><button class="icon-btn close" onclick="window.pywebview.api.close()" aria-label="关闭">×</button></div>
+    </header>
+
+    <section class="main">
+      <button id="posture" class="posture safe" onclick="openPrimaryAttention()">
+        <div class="posture-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3 19 6v5c0 4.6-2.9 8.1-7 10-4.1-1.9-7-5.4-7-10V6l7-3Z" stroke="currentColor" stroke-width="1.8"/><path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="posture-copy"><div id="posture-title" class="posture-title">正在分析操作…</div><div id="posture-subtitle" class="posture-subtitle">建立本地监控视图</div></div>
+        <div class="posture-side"><div id="score" class="score">0</div><span class="posture-arrow">›</span></div>
+      </button>
+    </section>
+
+    <section class="summary">
+      <div class="stats">
+        <button id="tool-stat" class="stat tool" onclick="openOperations('tool')"><i></i><b id="tool-count">0</b>工具</button>
+        <button id="network-stat" class="stat network" onclick="openOperations('network')"><i></i><b id="network-count">0</b>公网</button>
+        <button id="file-stat" class="stat file" onclick="openOperations('file')"><i></i><b id="file-count">0</b>文件</button>
+        <button id="system-stat" class="stat system" onclick="openOperations('system')"><i></i><b id="system-count">0</b>系统</button>
+        <button id="risk-stat" class="stat risk" onclick="openOperations('review')"><i></i><b id="review-count">0</b>关注</button>
+        <button id="safe-entry" class="stat safe-entry" onclick="openOperations('safe')"><i></i><b id="safe-count">0</b>正常</button>
+      </div>
+      <button class="expand" onclick="toggleExpanded()"><span id="expand-label">详情</span><svg class="chevron" viewBox="0 0 20 20"><path d="m5 7.5 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </section>
+
+    <section class="details">
+      <div class="list-view">
+        <div class="section-head"><span class="section-title">操作列表</span><span id="attention-count" class="section-count"></span></div>
+        <div id="attention-tabs" class="attention-tabs"></div>
+        <div id="file-scope-tabs" class="file-scope-tabs"></div>
+        <div id="recent-wrap" class="recent-wrap">
+          <div class="section-head"><span id="operation-list-title" class="section-title">正常操作</span><span id="normal-count" class="section-count"></span></div>
+          <div id="recent-list" class="recent-list"></div>
+        </div>
+        <div id="reviewed-wrap" class="reviewed-wrap" hidden>
+          <div class="section-head"><span class="section-title">已查看</span><span id="reviewed-count" class="section-count"></span></div>
+          <div id="reviewed-list" class="recent-list"></div>
+        </div>
+        <div class="footer-note">点击任意操作查看完整元数据</div>
+      </div>
+      <div class="detail-view">
+        <div class="detail-nav"><button class="back-button" onclick="closeDetail()">← 返回列表</button><span class="detail-nav-title">操作详情</span></div>
+        <div id="selected-detail"></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const locale = '__AGENTGUARD_LANGUAGE__';
+    const translations = {
+      '等待 Agent': 'Waiting for agent', '详情': 'Details', '收起': 'Collapse', '展开': 'Expand', '操作详情': 'Operation details', '返回列表': 'Back to list', '选择工作区': 'Choose workspace', '切换最小监控状态': 'Toggle compact status', '最小化到任务栏': 'Minimize to taskbar', '关闭': 'Close', '正在分析操作…': 'Analyzing activity…', '建立本地监控视图': 'Building local monitoring view',
+      '操作列表': 'Operations', '需关注': 'Needs attention', '已查看': 'Reviewed', '正常操作': 'Normal operations', '操作记录': 'Operation log', '工具操作': 'Tool operations',
+      '公网操作': 'Public network', '文件操作': 'File operations', '系统与隐私操作': 'System & privacy', '工作区行为': 'Workspace activity', '全部文件': 'All files',
+      '当前操作看起来正常': 'Current activity looks normal', '未发现明显的高风险行为': 'No obvious high-risk behavior found', '项操作需要关注': 'operations need attention',
+      '未发现明显风险特征': 'No obvious risk indicators found', '高风险': 'High risk', '正常': 'Normal', '关注': 'Attention', '标记已查看': 'Mark reviewed',
+      '确认此对话': 'Confirm this conversation', '确认此工作区': 'Confirm this workspace', '已确认会话': 'Session confirmed', '选择一项操作查看元数据': 'Select an operation to view metadata', '将此对话 ID 归入当前会话': 'Attribute this conversation ID to the current session', '未发现对话 ID，只确认当前工作区归属': 'No conversation ID found; confirm workspace attribution only',
+      '等待新的操作': 'Waiting for new operations', '暂无需关注操作': 'No attention items', '暂无已查看操作': 'No reviewed items', '暂无风险项': 'No risk items', '上一项风险': 'Previous attention item', '下一项风险': 'Next attention item', '查看操作详情': 'View operation details',
+      '点击任意操作查看完整元数据': 'Click any operation to view full metadata', '首次出现': 'First seen', '同类行为发生': 'Same behavior occurred',
+      '会话归属': 'Session attribution', '归属置信度': 'Attribution confidence', '对话 ID': 'Conversation ID', '归属工作区': 'Attribution workspace',
+      '事件类型': 'Event type', '系统组件': 'System component', '行为': 'Behavior', '目标': 'Target', '操作数量': 'Operation count', '观察窗口': 'Observation window',
+      'CPU': 'CPU', '内存': 'Memory', '完整性级别': 'Integrity level', '管理员令牌': 'Elevated token', '命令摘要': 'Command summary', '进程 PID': 'Process PID',
+      '目标进程 PID': 'Target process PID', '请求权限': 'Requested access', '磁盘读取总量': 'Total disk reads', '磁盘写入总量': 'Total disk writes', '读取速度': 'Read speed',
+      '写入速度': 'Write speed', '磁盘观测窗口': 'Disk observation window', '磁盘观测方式': 'Disk observation method', '关联文件（近 10 秒）': 'Related files (last 10s)',
+      '关联文件读写量': 'Related file I/O', '关联文件操作数': 'Related file operations', '风险等级': 'Risk level', '规则评分': 'Rule score', '发生时间': 'Occurred at',
+      '共享 Codex': 'Shared Codex', '其他会话': 'Other session', '当前会话': 'Current session', '当前工作区·会话未确认': 'Current workspace · session unconfirmed',
+      '当前工作区·会话已确认': 'Current workspace · session confirmed', '其他工作区·会话未确认': 'Other workspace · session unconfirmed', '归属不确定': 'Attribution unknown',
+      '工作区外': 'Outside workspace', '当前工作区': 'Current workspace', '其他会话工作区': 'Other session workspace', '公网': 'Public network', '本地网络': 'Local network',
+      '工具': 'Tool', '文件': 'File', '系统': 'System', '隐私': 'Privacy', '网络': 'Network', '资源': 'Resource', '供应链': 'Supply chain', '状态': 'Status',
+      '外部敏感文件': 'External sensitive file', '读取外部敏感文件': 'Read external sensitive file', '工作区外修改': 'Modified outside workspace', '工作区外创建': 'Created outside workspace',
+      '工作区外删除': 'Deleted outside workspace', '工作区外重命名': 'Renamed outside workspace', '进程出现异常高速磁盘读写': 'Abnormally fast process disk I/O',
+      '启动': 'Start', '连接': 'Connect', '传输': 'Transfer', 'TLS 握手': 'TLS handshake', '访问线索': 'Access signal', '创建': 'Created', '修改': 'Modified', '删除': 'Deleted', '重命名': 'Renamed', '读取': 'Read', '权限变化': 'Permission change', '资源异常': 'Resource anomaly',
+      'Windows 进程 IO 计数器；进程级汇总，不读取内容': 'Windows process I/O counters; process-level totals, no content read',
+      '未捕获到对应文件路径；请查看同一 PID 的文件操作记录': 'No matching file path captured; check file operations for the same PID',
+      '高': 'High', '中': 'Medium', '低': 'Low', '是': 'Yes', '否': 'No', '启发式评分，不是发生概率': 'Heuristic score, not probability',
+      '检测到打开句柄（近似）': 'Open handle detected (approximate)', 'Windows ETW 内核文件事件（仅元数据）': 'Windows ETW kernel file events (metadata only)',
+      '读取数据量': 'Bytes read', '写入数据量': 'Bytes written', '底层读取次数': 'Read operations', '底层写入次数': 'Write operations', '读取观察时长': 'Read observation time',
+      'Agent 根进程 PID': 'Agent root PID', '原路径': 'Original path', '文件大小': 'File size', '权限变更前': 'Permissions before', '权限变更后': 'Permissions after',
+      '目标地址': 'Target address', '域名线索': 'Hostname hint', '域名来源': 'Hostname source', '本地地址': 'Local address', '协议': 'Protocol', '连接状态': 'Connection status',
+      '已发送': 'Sent', '已接收': 'Received', '已观察时长': 'Observed duration', '平均上传速率': 'Average upload rate', '近期上传速率': 'Recent upload rate',
+      '流量统计': 'Traffic measurement', '查询域名': 'Queried domain', '查询类型': 'Query type', '查询状态': 'Query status', '观测方式': 'Observation method',
+      'TLS 目标': 'TLS target', 'TLS 协议': 'TLS protocol', '密码套件': 'Cipher suite', '证书主题': 'Certificate subject', '证书指纹': 'Certificate fingerprint',
+      '磁盘读取总量': 'Total disk reads', '磁盘写入总量': 'Total disk writes'
+    };
+    function tr(value) {
+      if (locale !== 'en' || value === undefined || value === null) return value;
+      let text = String(value);
+      Object.entries(translations).forEach(([from, to]) => { text = text.split(from).join(to); });
+      text = text.replace(/(\d+) 项操作需要关注/g, '$1 operations need attention');
+      text = text.replace(/显示 (\d+) 项/g, '$1 items');
+      text = text.replace(/未查看 (\d+) · 已查看 (\d+)/g, '$1 unreviewed · $2 reviewed');
+      text = text.replace(/同类行为发生 (\d+) 次/g, 'Same behavior occurred $1 times');
+      text = text.replace(/工作区外/g, 'Outside workspace');
+      return text;
+    }
+    function translateStatic(root = document.body) {
+      if (locale !== 'en') return;
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+      const nodes = []; while (walker.nextNode()) nodes.push(walker.currentNode);
+      nodes.forEach(textNode => { if (!textNode.parentElement.closest('script,style')) textNode.nodeValue = tr(textNode.nodeValue); });
+      root.querySelectorAll('[title],[aria-label]').forEach(el => { if (el.title) el.title = tr(el.title); if (el.getAttribute('aria-label')) el.setAttribute('aria-label', tr(el.getAttribute('aria-label'))); });
+    }
+    let expanded = false, minimal = false, lastRevision = -1, selectedId = null, currentState = null, activeFilter = 'safe', fileScope = 'all', detailMode = false;
+    const categoryIcons = { tool: '⌘', network: '↗', file: '◇', system: '⚙', local: '↔' };
+
+    function node(tag, className, text) { const el = document.createElement(tag); if (className) el.className = className; if (text !== undefined) el.textContent = tr(text); return el; }
+    function riskClass(item) { return item.severity === 'high' ? 'danger' : item.level === 'review' ? 'review' : 'safe'; }
+    function riskLabel(item) { return item.severity === 'high' ? '高风险' : item.level === 'review' ? '需关注' : '正常'; }
+
+    async function setExpanded(value) {
+      if (minimal && value) await setMinimal(false);
+      expanded = value; document.body.classList.toggle('expanded', expanded);
+      document.getElementById('expand-label').textContent = tr(expanded ? '收起' : '详情');
+      await window.pywebview.api.set_expanded(expanded);
+    }
+    function toggleExpanded() { setExpanded(!expanded); }
+    async function setMinimal(value) {
+      minimal = value;
+      if (minimal) {
+        expanded = false; detailMode = false;
+        document.body.classList.remove('expanded','detail-mode');
+      }
+      document.body.classList.toggle('minimal', minimal);
+      await window.pywebview.api.set_minimal(minimal);
+      if (!minimal) await window.pywebview.api.set_expanded(false);
+    }
+    function toggleMinimal() { setMinimal(!minimal); }
+    function focusSelectedDetail() {
+      const details = document.querySelector('.details');
+      details.scrollTo({ top: 0, behavior: 'instant' });
+      const card = document.querySelector('#selected-detail .detail-card');
+      if (!card) return;
+      card.classList.remove('focused');
+      void card.offsetWidth;
+      card.classList.add('focused');
+      card.focus({ preventScroll: true });
+    }
+    async function openPrimaryAttention() {
+      activeFilter = currentState?.attention?.length ? 'review' : 'safe';
+      if (currentState?.posture?.primary_id) selectedId = currentState.posture.primary_id;
+      await setExpanded(true);
+      if (selectedId) showDetail(selectedId); else renderDetails();
+      requestAnimationFrame(() => requestAnimationFrame(focusSelectedDetail));
+    }
+    async function openOperations(filter) {
+      activeFilter = filter; selectedId = null; detailMode = false; document.body.classList.remove('detail-mode');
+      await setExpanded(true); renderDetails();
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        const details = document.querySelector('.details'); const recent = document.querySelector('.recent-wrap');
+        if (details && recent) details.scrollTo({ top: recent.offsetTop - 4, behavior: 'smooth' });
+      }));
+    }
+    function showDetail(id) { selectedId = id; detailMode = true; document.body.classList.add('detail-mode'); renderDetails(); focusSelectedDetail(); }
+    function closeDetail() { detailMode = false; document.body.classList.remove('detail-mode'); renderDetails(); document.querySelector('.details')?.scrollTo({top:0,behavior:'instant'}); }
+    function selectAttention(id) { showDetail(id); }
+
+    function setFileScope(scope) {
+      fileScope = scope; activeFilter = 'file'; selectedId = null; detailMode = false;
+      document.body.classList.remove('detail-mode'); renderDetails();
+    }
+
+    function renderFileScopeTabs(items) {
+      const host = document.getElementById('file-scope-tabs'); host.replaceChildren();
+      if (activeFilter !== 'file') { host.classList.remove('visible'); return; }
+      host.classList.add('visible');
+      const workspaceCount = items.filter(item => item.scope === 'workspace').length;
+      [['all', `全部文件 · ${items.length}`], ['workspace', `工作区行为 · ${workspaceCount}`]].forEach(([scope, label]) => {
+        const button = node('button', scope === fileScope ? 'active' : '', label); button.type = 'button'; button.onclick = () => setFileScope(scope); host.append(button);
+      });
+    }
+
+    function renderTabs(items) {
+      const tabs = document.getElementById('attention-tabs'); tabs.replaceChildren();
+      if (items.length <= 1) return;
+      let index = items.findIndex(item => item.id === selectedId); if (index < 0) index = 0;
+      const item = items[index]; const switcher = node('div','attention-switcher');
+      const previous = node('button','attention-nav','‹'); previous.type = 'button'; previous.setAttribute('aria-label',tr('上一项风险')); previous.onclick = () => selectAttention(items[(index - 1 + items.length) % items.length].id); switcher.append(previous);
+      const current = node('div','attention-current'); const top = node('div','attention-current-top'); top.append(node('span','attention-index',`${index + 1} / ${items.length}`)); top.append(node('span','',`${item.attribution_label} · ${item.category}`)); current.append(top); current.append(node('div','attention-current-title',item.title)); switcher.append(current);
+      const next = node('button','attention-nav','›'); next.type = 'button'; next.setAttribute('aria-label',tr('下一项风险')); next.onclick = () => selectAttention(items[(index + 1) % items.length].id); switcher.append(next); tabs.append(switcher);
+    }
+
+    function renderDetail(item) {
+      const host = document.getElementById('selected-detail'); host.replaceChildren();
+      if (!item) { host.append(node('div','empty','选择一项操作查看元数据')); return; }
+      const risk = riskClass(item);
+      const card = node('div', `detail-card ${risk === 'danger' ? 'high' : ''}`);
+      const top = node('div','detail-top');
+      top.append(node('div',`category-icon cat-${item.category_key}`,categoryIcons[item.category_key] || '•'));
+      const heading = node('div','detail-heading'); const kicker = node('div','detail-kicker'); kicker.append(node('span','detail-category',item.category)); kicker.append(node('span','detail-session',item.attribution_label)); heading.append(kicker); heading.append(node('div','detail-title',item.title)); top.append(heading);
+      const riskPill = node('span',`risk-pill risk-${risk}`,riskLabel(item));
+      riskPill.title = tr(item.level === 'review' ? `规则评分 ${item.score}/100；这是启发式评分，不是发生概率` : '未形成需关注的组合证据');
+      top.append(riskPill); card.append(top);
+      card.append(node('div','reason-box',item.reason));
+      const grid = node('div','meta-grid');
+      (item.metadata || []).forEach(meta => { const row = node('div','meta-row'); row.append(node('span','meta-label',meta.label)); row.append(node('span','meta-value',meta.value)); grid.append(row); });
+      card.append(grid);
+      const actions = node('div','detail-actions');
+      const actionMeta = node('span','occurrences',item.occurrences > 1 ? `同类行为发生 ${item.occurrences} 次` : '首次出现'); actions.append(actionMeta);
+      const actionButtons = node('span','');
+      if (item.session_confirmed) {
+        const confirmed = node('button','confirm-session','已确认会话'); confirmed.disabled = true; actionButtons.append(confirmed);
+      } else if (item.thread_id || item.workspace_path) {
+        const confirm = node('button','confirm-session',item.thread_id ? '确认此对话' : '确认此工作区'); confirm.title = tr(item.thread_id ? '将此对话 ID 归入当前会话' : '未发现对话 ID，只确认当前工作区归属'); confirm.onclick = async () => { await window.pywebview.api.confirm_session(item.id); await refresh(true); }; actionButtons.append(confirm);
+      }
+      const dismiss = node('button','dismiss',item.reviewed ? '已查看' : '标记已查看'); dismiss.disabled = !!item.reviewed; if (!item.reviewed) dismiss.onclick = async () => { await window.pywebview.api.dismiss(item.id); selectedId = null; detailMode = false; document.body.classList.remove('detail-mode'); await refresh(true); }; actionButtons.append(dismiss); actions.append(actionButtons); card.append(actions); host.append(card);
+    }
+
+    function renderRecent(items, hostId = 'recent-list', emptyText = '等待新的操作') {
+      const list = document.getElementById(hostId); list.replaceChildren();
+      if (!items.length) { list.append(node('div','empty',emptyText)); return; }
+      items.forEach(item => { const row = node('button','recent-row'); row.type = 'button'; row.setAttribute('aria-label',tr(`查看操作详情：${item.attribution_label}，${item.category}，${item.title}`)); row.append(node('span',`recent-icon cat-${item.category_key}`,categoryIcons[item.category_key] || '•')); row.append(node('span','recent-description',`${item.attribution_label} · ${item.category} · ${item.title}`)); row.append(node('span',`mini-risk ${item.reviewed ? 'reviewed' : `risk-${riskClass(item)}`}`,item.reviewed ? '已查看' : riskLabel(item))); row.append(node('span','recent-time',item.time)); row.append(node('span','row-arrow','›')); row.onclick = () => showDetail(item.id); list.append(row); });
+    }
+
+    function renderDetails() {
+      if (!currentState) return;
+      const categoryRecent = ['tool','network','file','system'].includes(activeFilter)
+        ? ((currentState.recent_by_category || {})[activeFilter] || [])
+        : currentState.recent;
+      const allCandidates = [...currentState.attention, ...(currentState.reviewed || []), ...categoryRecent];
+      const filters = {
+        safe: item => item.level !== 'review',
+        review: item => item.level === 'review',
+        tool: item => item.category_key === 'tool',
+        network: item => item.category_key === 'network',
+        file: item => item.category_key === 'file',
+        system: item => item.category_key === 'system',
+      };
+      const labels = { safe: '正常操作', review: '需关注', tool: '工具操作', network: '公网操作', file: '文件操作', system: '系统与隐私操作' };
+      const fileCandidates = allCandidates.filter(item => item.category_key === 'file');
+      renderFileScopeTabs(fileCandidates);
+      const candidates = activeFilter === 'file' && fileScope === 'workspace'
+        ? fileCandidates.filter(item => item.scope === 'workspace')
+        : allCandidates;
+      const listed = candidates.filter(filters[activeFilter] || filters.safe);
+      const reviewItems = activeFilter === 'review' ? currentState.attention.filter(filters.review) : [];
+      const reviewedItems = activeFilter === 'review' ? (currentState.reviewed || []).filter(filters.review) : [];
+      if (!selectedId || !listed.some(item => item.id === selectedId)) selectedId = listed[0]?.id || null;
+      const selected = listed.find(item => item.id === selectedId) || null;
+      renderTabs(activeFilter === 'review' && !detailMode ? reviewItems : []);
+      const reviewedWrap = document.getElementById('reviewed-wrap');
+      reviewedWrap.hidden = activeFilter !== 'review';
+      if (activeFilter === 'review') {
+        renderRecent(reviewItems, 'recent-list', '暂无需关注操作');
+        renderRecent(reviewedItems, 'reviewed-list', '暂无已查看操作');
+        document.getElementById('operation-list-title').textContent = tr('需关注');
+        document.getElementById('normal-count').textContent = tr(`显示 ${reviewItems.length} 项`);
+        document.getElementById('reviewed-count').textContent = tr(`显示 ${reviewedItems.length} 项`);
+      } else {
+        renderRecent(listed, 'recent-list');
+        document.getElementById('operation-list-title').textContent = tr(activeFilter === 'file' && fileScope === 'workspace' ? '工作区行为' : labels[activeFilter] || '操作记录');
+        document.getElementById('normal-count').textContent = tr(`显示 ${listed.length} 项`);
+      }
+      if (detailMode) renderDetail(selected);
+      ['tool','network','file','system','review','safe'].forEach(key => {
+        const id = key === 'safe' ? 'safe-entry' : key === 'review' ? 'risk-stat' : `${key}-stat`;
+        document.getElementById(id)?.classList.toggle('active', key === activeFilter);
+      });
+      const activeAttention = currentState.attention.length; const reviewedCount = (currentState.reviewed || []).length;
+      document.getElementById('attention-count').textContent = tr(activeAttention || reviewedCount ? `未查看 ${activeAttention} · 已查看 ${reviewedCount}` : '暂无风险项');
+    }
+
+    function render(state, force=false) {
+      if (!state || (!force && state.revision === lastRevision)) return;
+      lastRevision = state.revision; currentState = state;
+      const live = document.getElementById('live'); live.classList.toggle('active',state.active); const livePids = state.pids || []; live.querySelector('span').textContent = tr(state.active ? `Codex · ${livePids[0] ?? ''}${livePids.length > 1 ? ` +${livePids.length - 1}` : ''}` : '等待 Agent');
+      const conversationId = document.getElementById('conversation-id'); const threadId = String(state.current_thread_id || ''); conversationId.textContent = tr(threadId ? `对话 · ${threadId.slice(0, 13)}…` : '对话 ID 未确认'); conversationId.title = threadId ? `Current Codex conversation ID: ${threadId}` : 'Current Codex conversation ID is unavailable';
+      const minimalRisk = document.getElementById('minimal-risk'); const reviewCount = state.counts.review || 0; minimalRisk.textContent = tr(reviewCount ? `关注 ${reviewCount}` : '正常'); minimalRisk.classList.toggle('has-risk', reviewCount > 0);
+      const posture = document.getElementById('posture'); posture.className = `posture ${state.posture.level}`;
+      document.getElementById('posture-title').textContent = tr(state.posture.title); document.getElementById('posture-subtitle').textContent = tr(state.posture.subtitle); const score = document.getElementById('score'); score.textContent = tr(state.posture.score >= 80 ? '高风险' : '需关注'); score.title = state.posture.score ? tr(`最高规则评分 ${state.posture.score}/100；不是发生概率`) : '';
+      document.getElementById('tool-count').textContent = state.kind_counts.tools; document.getElementById('network-count').textContent = state.kind_counts.network; document.getElementById('file-count').textContent = state.kind_counts.files; document.getElementById('system-count').textContent = state.kind_counts.system; document.getElementById('review-count').textContent = state.counts.review; document.getElementById('safe-count').textContent = state.counts.safe;
+      document.getElementById('risk-stat').classList.toggle('danger',state.posture.level === 'danger'); document.getElementById('normal-count').title = state.workspace_path || state.workspace;
+      renderDetails();
+    }
+    async function refresh(force=false) { try { render(await window.pywebview.api.get_state(),force); } catch (_) {} }
+    async function chooseWorkspace() { try { const changed = await window.pywebview.api.choose_workspace(); if (changed) { lastRevision = -1; selectedId = null; await refresh(true); } } catch (_) {} }
+    window.addEventListener('pywebviewready',async()=>{ translateStatic(); await window.pywebview.api.set_minimal(false); await window.pywebview.api.set_expanded(false); refresh(); setInterval(refresh,1500); });
+  </script>
+</body>
+</html>
