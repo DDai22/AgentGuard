@@ -19,7 +19,7 @@ Cursor Agent, Cline, Goose, and custom coding agents.
 <p>
   <a href="#-quick-start"><strong>Try it in 60 seconds →</strong></a>
   &nbsp;·&nbsp;
-  <a href="https://github.com/DDai22/CodexMonitor/issues">Report an issue</a>
+  <a href="https://github.com/DDai22/AgentGuard/issues">Report an issue</a>
   &nbsp;·&nbsp;
   <a href="README.zh-CN.md">中文说明</a>
 </p>
