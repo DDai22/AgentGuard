@@ -127,7 +127,7 @@ class ActivityCorrelator:
     @staticmethod
     def _base(event: dict[str, Any]) -> dict[str, Any]:
         keys = (
-            "pid", "session_pid", "session_id", "thread_id", "attribution",
+            "pid", "session_pid", "session_id", "thread_id", "agent_name", "attribution",
             "attribution_label", "attribution_confidence", "workspace_path",
         )
         return {key: event.get(key) for key in keys if event.get(key) is not None}
@@ -554,7 +554,7 @@ class SystemChangeTracker:
                 elif relation == "other_thread":
                     data["pid"] = context.get("pid")
                     data["registry_write_operation"] = context.get("operation")
-                    original_reasons.append("写入来自其他 Codex 会话，不计入当前会话风险")
+                    original_reasons.append("写入来自其他 Agent 会话，不计入当前会话风险")
                 elif relation == "other_workspace":
                     data["pid"] = context.get("pid")
                     data["registry_write_operation"] = context.get("operation")

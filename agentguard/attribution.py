@@ -16,6 +16,27 @@ GENERIC_CWD_PARTS = {
     "temp",
 }
 
+AGENT_DISPLAY_NAMES = {
+    "codex.exe": "Codex",
+    "claude.exe": "Claude Code",
+    "claude-code.exe": "Claude Code",
+    "gemini.exe": "Gemini CLI",
+    "aider.exe": "Aider",
+    "cursor-agent.exe": "Cursor Agent",
+    "cline.exe": "Cline",
+    "goose.exe": "Goose",
+}
+
+
+def agent_display_name(process_name: Any) -> str:
+    """Return a friendly label without assuming one specific coding agent."""
+    value = str(process_name or "").strip()
+    lowered = value.lower()
+    if lowered in AGENT_DISPLAY_NAMES:
+        return AGENT_DISPLAY_NAMES[lowered]
+    stem = Path(value).stem if value else "Agent"
+    return stem.replace("-", " ").replace("_", " ").strip().title() or "Agent"
+
 
 def _within(path: Path, parent: Path) -> bool:
     try:
@@ -26,7 +47,7 @@ def _within(path: Path, parent: Path) -> bool:
 
 
 class SessionAttributor:
-    """Metadata-only Codex thread/workspace attribution with explicit confidence."""
+    """Metadata-only agent thread/workspace attribution with explicit confidence."""
 
     def __init__(self, root: Path, current_thread_id: str | None = None) -> None:
         self.root = root.resolve()
@@ -74,6 +95,9 @@ class SessionAttributor:
                     continue
                 thread_id = self._thread_id(pid, info.get("create_time"))
                 workspace = self._useful_workspace(info.get("cwd"))
+                agent_name = str(parent.get("agent_name")) if parent and parent.get("agent_name") else None
+                if agent_name is None and pid in roots:
+                    agent_name = agent_display_name(info.get("name"))
                 if thread_id:
                     current = bool(self.current_thread_id and thread_id == self.current_thread_id)
                     relation = "current_thread" if current else "other_thread"
@@ -102,12 +126,12 @@ class SessionAttributor:
                         workspace = Path(str(parent["workspace_path"]))
                 elif parent and parent.get("attribution") == "shared" and workspace is None:
                     relation = "shared"
-                    label = "共享 Codex"
+                    label = f"共享 {agent_name or 'Agent'}"
                     confidence = "medium"
                     session_id = str(parent["session_id"])
                 elif pid in roots:
                     relation = "shared"
-                    label = "共享 Codex"
+                    label = f"共享 {agent_name or 'Agent'}"
                     confidence = "high"
                     session_id = f"shared:{root_pid}"
                 elif workspace:
@@ -127,6 +151,7 @@ class SessionAttributor:
                     "attribution_label": label,
                     "attribution_confidence": confidence,
                     "workspace_path": str(workspace) if workspace else None,
+                    "agent_name": agent_name or "Agent",
                 }
                 pending.remove(pid)
                 progressed = True
@@ -140,5 +165,6 @@ class SessionAttributor:
                     "attribution_label": "归属不确定",
                     "attribution_confidence": "low",
                     "workspace_path": str(info.get("cwd") or "") or None,
+                    "agent_name": agent_display_name(info.get("name")),
                 }
         return result

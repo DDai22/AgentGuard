@@ -7,7 +7,7 @@ import time
 import unittest
 from pathlib import Path
 
-from agentguard.attribution import SessionAttributor
+from agentguard.attribution import SessionAttributor, agent_display_name
 from agentguard.deep import FileAccessTracker, classify_observed_file, human_bytes
 from agentguard.file_etw import EtwFileReadTracker
 from agentguard.extended import ActivityCorrelator, DnsEtwTracker, RegistryEtwTracker, SystemChangeTracker, windows_process_security
@@ -35,6 +35,11 @@ class RedactionTests(unittest.TestCase):
 
 
 class SessionAttributionTests(unittest.TestCase):
+    def test_agent_names_are_friendly_and_extensible(self) -> None:
+        self.assertEqual(agent_display_name("claude-code.exe"), "Claude Code")
+        self.assertEqual(agent_display_name("gemini.exe"), "Gemini CLI")
+        self.assertEqual(agent_display_name("my-agent.exe"), "My Agent")
+
     def test_thread_id_separates_parallel_codex_conversations(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / "current"
@@ -46,7 +51,7 @@ class SessionAttributionTests(unittest.TestCase):
             attributor._thread_id = lambda pid, _created: thread_ids[pid]
             result = attributor.build(
                 {
-                    10: ({"pid": 10, "ppid": 1, "cwd": None, "create_time": 1.0}, 10),
+                    10: ({"pid": 10, "ppid": 1, "name": "claude-code.exe", "cwd": None, "create_time": 1.0}, 10),
                     11: ({"pid": 11, "ppid": 10, "cwd": str(root), "create_time": 2.0}, 10),
                     12: ({"pid": 12, "ppid": 10, "cwd": str(other), "create_time": 3.0}, 10),
                 },
@@ -56,6 +61,7 @@ class SessionAttributionTests(unittest.TestCase):
             self.assertEqual(result[11]["attribution"], "current_thread")
             self.assertEqual(result[12]["attribution"], "other_thread")
             self.assertEqual(result[11]["attribution_confidence"], "high")
+            self.assertEqual(result[10]["agent_name"], "Claude Code")
 
     def test_process_roots_follow_selected_workspace(self) -> None:
         tracker = ProcessTracker(

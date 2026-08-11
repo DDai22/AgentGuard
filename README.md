@@ -4,7 +4,8 @@
 
 ### See what your coding agent is doing — without reading what you write.
 
-Local, metadata-only observability for Codex, Claude Code, and other coding agents.
+Local, metadata-only observability for Codex, Claude Code, Gemini CLI, Aider,
+Cursor Agent, Cline, Goose, and custom coding agents.
 
 <p>
   <img src="https://img.shields.io/badge/platform-Windows-0b76d1?style=flat-square" alt="Windows">
@@ -169,13 +170,21 @@ AgentGuard distinguishes:
 - **Current conversation** — the conversation ID matches the monitor context.
 - **Other conversation** — another parallel agent session, still logged but
   separable from the current one.
-- **Shared Codex** — the monitored Codex root/shared process without a distinct
+- **Shared agent** — the monitored agent root/shared process without a distinct
   thread ID.
 - **Unconfirmed workspace** — useful workspace context without exact thread
   identity.
 
 When Windows exposes a conversation ID, the UI shows it. Conversation content
 is never read.
+
+The default process targets include Codex, Claude Code, Gemini CLI, Aider,
+Cursor Agent, Cline, and Goose. Add any other executable without changing the
+collector:
+
+```powershell
+python -m agentguard ui --targets my-agent.exe --language en
+```
 
 ## 🕵️ Privacy model
 

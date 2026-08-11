@@ -566,9 +566,9 @@ class ProcessTracker:
                 parent = processes[int(parent)].get("ppid")
             if not has_target_ancestor:
                 roots.add(pid)
-        # When several Codex installations are running, prefer the root whose
+        # When several agent installations are running, prefer the root whose
         # process tree contains the selected workspace. This avoids attributing
-        # another VS Code/Desktop Codex instance to the current monitor.
+        # another VS Code/Desktop agent instance to the current monitor.
         workspace = self.workspace_root.resolve()
         workspace_roots: set[int] = set()
         for pid, info in processes.items():
@@ -675,6 +675,7 @@ class ProcessTracker:
                 ppid=info.get("ppid"),
                 session_pid=info.get("session_pid"),
                 name=info.get("name"),
+                agent_name=info.get("agent_name"),
                 create_time=info.get("create_time"),
                 session_id=info.get("session_id"),
                 thread_id=info.get("thread_id"),
@@ -940,11 +941,19 @@ class AgentMonitor:
         self.system_changes.poll(force=True)
         self.audit.poll(force=True)
         self.sink.metadata["root_pids"] = sorted(self.processes.root_pids)
+        agent_names = sorted(
+            {
+                str(value.get("agent_name") or "Agent")
+                for value in attributions.values()
+                if value.get("agent_name")
+            }
+        )
         self.sink.emit(
             "monitor.started",
             root=str(self.root),
             output=str(self.output),
             root_pids=sorted(self.processes.root_pids),
+            agent_names=agent_names,
         )
         exact_file_io = self.file_reads.start()
         self.sink.emit(

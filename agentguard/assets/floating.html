@@ -176,7 +176,7 @@
 <body>
   <main class="app">
     <header class="titlebar pywebview-drag-region">
-      <div class="brand"><div class="mark"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3 19 6v5c0 4.6-2.9 8.1-7 10-4.1-1.9-7-5.4-7-10V6l7-3Z" stroke="currentColor" stroke-width="2"/><path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="name">AgentGuard</span><span id="live" class="live"><i></i><span>等待 Agent</span></span><span id="conversation-id" class="conversation-id" title="当前 Codex 对话 ID 未确认"></span><span id="minimal-risk" class="minimal-status">正常</span></div>
+      <div class="brand"><div class="mark"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3 19 6v5c0 4.6-2.9 8.1-7 10-4.1-1.9-7-5.4-7-10V6l7-3Z" stroke="currentColor" stroke-width="2"/><path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="name">AgentGuard</span><span id="live" class="live"><i></i><span>等待 Agent</span></span><span id="conversation-id" class="conversation-id" title="当前 Agent 对话 ID 未确认"></span><span id="minimal-risk" class="minimal-status">正常</span></div>
       <div class="controls" onmousedown="event.stopPropagation()"><button class="icon-btn workspace-btn" onclick="chooseWorkspace()" aria-label="选择工作区" title="选择工作区"><svg viewBox="0 0 24 24" fill="none"><path d="M3.5 7.5h6l1.7 2h9.3v8.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2V7.5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M3.5 7.5V6a2 2 0 0 1 2-2h4l1.6 2h7.4a2 2 0 0 1 2 2v1.5" stroke="currentColor" stroke-width="1.7"/></svg></button><button class="icon-btn minimal-toggle" onclick="toggleMinimal()" aria-label="切换最小监控状态" title="切换最小监控状态"><svg viewBox="0 0 20 20" fill="none"><path d="m5 8 5 5 5-5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="icon-btn window-minimize" onclick="window.pywebview.api.minimize()" aria-label="最小化到任务栏">−</button><button class="icon-btn close" onclick="window.pywebview.api.close()" aria-label="关闭">×</button></div>
     </header>
 
@@ -233,13 +233,13 @@
       '确认此对话': 'Confirm this conversation', '确认此工作区': 'Confirm this workspace', '已确认会话': 'Session confirmed', '选择一项操作查看元数据': 'Select an operation to view metadata', '将此对话 ID 归入当前会话': 'Attribute this conversation ID to the current session', '未发现对话 ID，只确认当前工作区归属': 'No conversation ID found; confirm workspace attribution only',
       '等待新的操作': 'Waiting for new operations', '暂无需关注操作': 'No attention items', '暂无已查看操作': 'No reviewed items', '暂无风险项': 'No risk items', '上一项风险': 'Previous attention item', '下一项风险': 'Next attention item', '查看操作详情': 'View operation details',
       '点击任意操作查看完整元数据': 'Click any operation to view full metadata', '首次出现': 'First seen', '同类行为发生': 'Same behavior occurred',
-      '会话归属': 'Session attribution', '归属置信度': 'Attribution confidence', '对话 ID': 'Conversation ID', '归属工作区': 'Attribution workspace',
+      '会话归属': 'Session attribution', 'Agent 类型': 'Agent type', '归属置信度': 'Attribution confidence', '对话 ID': 'Conversation ID', '归属工作区': 'Attribution workspace',
       '事件类型': 'Event type', '系统组件': 'System component', '行为': 'Behavior', '目标': 'Target', '操作数量': 'Operation count', '观察窗口': 'Observation window',
       'CPU': 'CPU', '内存': 'Memory', '完整性级别': 'Integrity level', '管理员令牌': 'Elevated token', '命令摘要': 'Command summary', '进程 PID': 'Process PID',
       '目标进程 PID': 'Target process PID', '请求权限': 'Requested access', '磁盘读取总量': 'Total disk reads', '磁盘写入总量': 'Total disk writes', '读取速度': 'Read speed',
       '写入速度': 'Write speed', '磁盘观测窗口': 'Disk observation window', '磁盘观测方式': 'Disk observation method', '关联文件（近 10 秒）': 'Related files (last 10s)',
       '关联文件读写量': 'Related file I/O', '关联文件操作数': 'Related file operations', '风险等级': 'Risk level', '规则评分': 'Rule score', '发生时间': 'Occurred at',
-      '共享 Codex': 'Shared Codex', '其他会话': 'Other session', '当前会话': 'Current session', '当前工作区·会话未确认': 'Current workspace · session unconfirmed',
+      '共享 Codex': 'Shared Codex', '共享 Agent': 'Shared agent', '共享 ': 'Shared ', '其他会话': 'Other session', '当前会话': 'Current session', '当前工作区·会话未确认': 'Current workspace · session unconfirmed',
       '当前工作区·会话已确认': 'Current workspace · session confirmed', '其他工作区·会话未确认': 'Other workspace · session unconfirmed', '归属不确定': 'Attribution unknown',
       '工作区外': 'Outside workspace', '当前工作区': 'Current workspace', '其他会话工作区': 'Other session workspace', '公网': 'Public network', '本地网络': 'Local network',
       '工具': 'Tool', '文件': 'File', '系统': 'System', '隐私': 'Privacy', '网络': 'Network', '资源': 'Resource', '供应链': 'Supply chain', '状态': 'Status',
@@ -438,8 +438,8 @@
     function render(state, force=false) {
       if (!state || (!force && state.revision === lastRevision)) return;
       lastRevision = state.revision; currentState = state;
-      const live = document.getElementById('live'); live.classList.toggle('active',state.active); const livePids = state.pids || []; live.querySelector('span').textContent = tr(state.active ? `Codex · ${livePids[0] ?? ''}${livePids.length > 1 ? ` +${livePids.length - 1}` : ''}` : '等待 Agent');
-      const conversationId = document.getElementById('conversation-id'); const threadId = String(state.current_thread_id || ''); conversationId.textContent = tr(threadId ? `对话 · ${threadId.slice(0, 13)}…` : '对话 ID 未确认'); conversationId.title = threadId ? `Current Codex conversation ID: ${threadId}` : 'Current Codex conversation ID is unavailable';
+      const live = document.getElementById('live'); live.classList.toggle('active',state.active); const livePids = state.pids || []; const agentNames = state.agent_names || []; const agentLabel = agentNames.length ? agentNames.join(' + ') : 'Agent'; live.querySelector('span').textContent = tr(state.active ? `${agentLabel} · ${livePids[0] ?? ''}${livePids.length > 1 ? ` +${livePids.length - 1}` : ''}` : '等待 Agent');
+      const conversationId = document.getElementById('conversation-id'); const threadId = String(state.current_thread_id || ''); conversationId.textContent = tr(threadId ? `对话 · ${threadId.slice(0, 13)}…` : '对话 ID 未确认'); conversationId.title = threadId ? `Current ${agentLabel} conversation ID: ${threadId}` : `Current ${agentLabel} conversation ID is unavailable`;
       const minimalRisk = document.getElementById('minimal-risk'); const reviewCount = state.counts.review || 0; minimalRisk.textContent = tr(reviewCount ? `关注 ${reviewCount}` : '正常'); minimalRisk.classList.toggle('has-risk', reviewCount > 0);
       const posture = document.getElementById('posture'); posture.className = `posture ${state.posture.level}`;
       document.getElementById('posture-title').textContent = tr(state.posture.title); document.getElementById('posture-subtitle').textContent = tr(state.posture.subtitle); const score = document.getElementById('score'); score.textContent = tr(state.posture.score >= 80 ? '高风险' : '需关注'); score.title = state.posture.score ? tr(`最高规则评分 ${state.posture.score}/100；不是发生概率`) : '';

@@ -169,7 +169,7 @@ class RiskAssessor:
         if correlation_key and ARCHIVE_PATTERN.search(archive_text):
             self.recent_archives[correlation_key] = (time.monotonic(), archive_text[:300])
         if data.get("attribution") in {"other_thread", "other_workspace"}:
-            return self._safe("其他 Codex 会话的工具操作，不计入当前会话风险", score=2)
+            return self._safe("其他 Agent 会话的工具操作，不计入当前会话风险", score=2)
         matches = [(score, reason) for pattern, score, reason in PROCESS_RULES if pattern.search(command)]
         if matches:
             return self._review(max(score for score, _ in matches), *(reason for _, reason in matches))
@@ -241,7 +241,7 @@ class RiskAssessor:
 
     def _network_traffic(self, data: dict[str, Any]) -> RiskAssessment:
         if data.get("attribution") in {"other_thread", "other_workspace"}:
-            return self._safe("其他 Codex 会话的网络流量，不计入当前会话风险", score=2)
+            return self._safe("其他 Agent 会话的网络流量，不计入当前会话风险", score=2)
         if data.get("traffic_precision") != "exact_tcp_payload":
             return self._safe("流量大小不可精确归因，未据此判定风险", score=0)
         remote = str(data.get("remote") or "")
@@ -323,7 +323,7 @@ class RiskAssessor:
     def _network(self, data: dict[str, Any]) -> RiskAssessment:
         remote = str(data.get("remote") or "")
         if data.get("attribution") in {"other_thread", "other_workspace"}:
-            return self._safe("其他 Codex 会话的连接，不计入当前会话风险", score=2)
+            return self._safe("其他 Agent 会话的连接，不计入当前会话风险", score=2)
         if data.get("attribution") == "unknown":
             return self._safe("连接归属不确定，未强行计入当前会话风险", score=10)
         if data.get("pid") == data.get("session_pid"):

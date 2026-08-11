@@ -7,7 +7,16 @@ from pathlib import Path
 from .monitor import AgentMonitor, find_agent_processes
 
 
-DEFAULT_TARGETS = ["codex.exe", "claude.exe", "claude-code.exe"]
+DEFAULT_TARGETS = [
+    "codex.exe",
+    "claude.exe",
+    "claude-code.exe",
+    "gemini.exe",
+    "aider.exe",
+    "cursor-agent.exe",
+    "cline.exe",
+    "goose.exe",
+]
 
 
 def build_parser() -> argparse.ArgumentParser:

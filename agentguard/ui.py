@@ -240,6 +240,7 @@ def _metadata(event: dict[str, Any]) -> list[dict[str, str]]:
         rows.extend(
             [
                 ("会话归属", event.get("attribution_label")),
+                ("Agent 类型", event.get("agent_name")),
                 ("归属置信度", {"high": "高", "medium": "中", "low": "低"}.get(str(event.get("attribution_confidence") or ""))),
                 ("对话 ID", event.get("thread_id")),
                 ("归属工作区", event.get("workspace_path")),
@@ -266,6 +267,7 @@ class ScreeningState:
         self.lock = threading.Lock()
         self.revision = 0
         self.agent_pids: set[int] = set()
+        self.agent_names: set[str] = set()
         self.seen_operations: set[str] = set()
         self.counts = {"safe": 0, "review": 0, "total": 0}
         self.kind_counts = {"tools": 0, "files": 0, "network": 0, "system": 0}
@@ -356,10 +358,13 @@ class ScreeningState:
         with self.lock:
             if kind == "monitor.started":
                 self.agent_pids.update(int(pid) for pid in event.get("root_pids") or [])
+                self.agent_names.update(str(name) for name in event.get("agent_names") or [] if name)
                 self.revision += 1
                 return
             if kind in {"process.discovered", "process.started"} and event.get("session_pid"):
                 self.agent_pids.add(int(event["session_pid"]))
+                if event.get("agent_name"):
+                    self.agent_names.add(str(event["agent_name"]))
             if not is_operation_event(kind):
                 return
 
@@ -551,6 +556,7 @@ class ScreeningState:
                     "current_thread_id": self.current_thread_id,
                     "active": bool(self.agent_pids),
                     "pids": sorted(self.agent_pids),
+                    "agent_names": sorted(self.agent_names),
                     "posture": posture,
                     "counts": self.counts,
                     "kind_counts": self.kind_counts,
