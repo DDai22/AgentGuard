@@ -15,7 +15,21 @@ Local, metadata-only observability for Codex, Claude Code, and other coding agen
 
 <p><strong>Process trees · File I/O · Network access · System changes · Risk screening</strong></p>
 
-[Quick start](#-quick-start) · [What it sees](#-what-it-sees) · [Privacy model](#-privacy-model) · [中文说明](README.zh-CN.md)
+<p>
+  <a href="#-quick-start"><strong>Try it in 60 seconds →</strong></a>
+  &nbsp;·&nbsp;
+  <a href="https://github.com/DDai22/CodexMonitor/issues">Report an issue</a>
+  &nbsp;·&nbsp;
+  <a href="README.zh-CN.md">中文说明</a>
+</p>
+
+<p>
+  <img src="docs/agentguard-detail.png" alt="AgentGuard operation detail view" width="680">
+</p>
+
+<sub>Live operation detail preview · English UI is available with <code>--language en</code></sub>
+
+[Quick start](#-quick-start) · [What it sees](#-what-it-sees) · [Privacy model](#-privacy-model)
 
 </div>
 
@@ -33,6 +47,16 @@ AgentGuard adds a small, always-on-top lens over that workflow:
 
 It does not proxy traffic, inject into the agent, read file contents, block
 actions, or pretend to be a security boundary.
+
+### Built for the moment that matters
+
+```text
+  “Why did the agent touch that file?”
+  “Which process opened the connection?”
+  “Was this my conversation or another one?”
+
+                         AgentGuard answers with metadata.
+```
 
 ## ✨ What it sees
 
@@ -74,6 +98,18 @@ The UI keeps the small things quiet and brings the important thing forward:
    method, rule score, and related metadata.
 
 ## 🚀 Quick start
+
+### The shortest path to a useful signal
+
+```powershell
+python -m pip install -e .
+python -m agentguard discover
+python -m agentguard ui --root D:\path\to\workspace --language en
+```
+
+Open an operation card and you can inspect its PID, session attribution,
+conversation ID when available, path, byte counts, rates, observation method,
+and explainable rule score.
 
 ### Requirements
 
